@@ -1,0 +1,22 @@
+{
+  "files.exclude": {
+    "**/.devdb": true
+  },
+  "search.exclude": {
+    "**/.devdb": true
+  },
+  "files.associations": {
+    "*.sql": "sql"
+  },
+  "sqltools.connections": [
+    {
+      "name": "kbfa_dev (local)",
+      "driver": "PostgreSQL",
+      "server": "localhost",
+      "port": 5432,
+      "database": "kbfa_dev",
+      "username": "${env:USER}"
+    }
+  ],
+  "editor.formatOnSave": false
+}

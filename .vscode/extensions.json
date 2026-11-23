@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "ms-ossdata.vscode-pgsql",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    "editorconfig.editorconfig",
+    "eamodio.gitlens"
+  ]
+}
