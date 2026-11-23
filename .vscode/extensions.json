@@ -4,6 +4,9 @@
     "mtxr.sqltools",
     "mtxr.sqltools-driver-pg",
     "editorconfig.editorconfig",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter"
   ]
 }

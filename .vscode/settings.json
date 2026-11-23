@@ -1,13 +1,19 @@
 {
   "files.exclude": {
-    "**/.devdb": true
+    "**/.devdb": true,
+    "**/__pycache__": true
   },
   "search.exclude": {
-    "**/.devdb": true
+    "**/.devdb": true,
+    "**/.venv": true,
+    "**/__pycache__": true
   },
   "files.associations": {
     "*.sql": "sql"
   },
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "python.testing.cwd": "${workspaceFolder}/backend",
   "sqltools.connections": [
     {
       "name": "kbfa_dev (local)",
