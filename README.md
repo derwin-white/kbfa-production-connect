@@ -7,10 +7,29 @@ and production leads search/discover entities across those facets.
 
 ## Status
 
-Phase 0 — schema design + search-quality prototyping. No backend/frontend
-app code yet. See `db/` for the validated PostgreSQL schema and prototype
-queries, and the sections below for the taxonomy, schema, and AWS hosting
-decisions.
+Phase 0 schema design is done and validated (see `db/`). Phase 1 — a
+FastAPI backend (`backend/`) implementing the entities/tags/connections/
+projects API against that schema — is scaffolded and working locally.
+No frontend yet.
+
+## Backend (`backend/`)
+
+Python 3.12 + FastAPI + SQLAlchemy (async, `asyncpg`) + GeoAlchemy2.
+Endpoints mirror the facets validated in `db/schema/002_prototype_queries.sql`:
+full-text + fuzzy entity search, controlled-tag AND-faceting, PostGIS
+proximity, 1st/2nd-degree connection traversal, and project rosters.
+
+```bash
+cd backend
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env   # edit DATABASE_URL for your local Postgres user
+.venv/bin/uvicorn app.main:app --reload
+```
+
+Interactive API docs at `http://127.0.0.1:8000/docs` once running. No
+auth yet — matches the open "auth approach" item in the hosting section
+below. `Dockerfile` builds a container suitable for the proposed App
+Runner/Fargate deployment.
 
 ## Decisions carried in from planning
 
