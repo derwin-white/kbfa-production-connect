@@ -80,7 +80,7 @@ the full DDL. Summary:
 
 | Table | Purpose |
 |---|---|
-| `entity_types` | Lookup: individual vs. business, plus sub-category (crew, talent, production company, rental house, studio, vendor...). |
+| `entity_types` | Lookup: individual vs. business, plus sub-category (crew, talent, production company, rental house, studio, vendor, post-production house, talent/casting agency, event production company, ad agency...). |
 | `tags` | Controlled vocabulary for skills/equipment/roles, with `category` and `aliases` for synonym matching. |
 | `entities` | The individuals/businesses themselves — name, bio, contact JSONB, `location` (PostGIS geography point), `free_text_skills` (hybrid overflow), `metadata` JSONB for anything else flexible, and a generated `search_vector`. |
 | `entity_tags` | Many-to-many entity ↔ controlled tag. |
@@ -95,6 +95,51 @@ Known simplifications, worth revisiting later:
 - `entity_types` and `tags.category`/`project_type` are plain text/lookup
   rows, not a deeper hierarchy — fine for a launch-scale taxonomy, may
   need a proper tree if categories get deep.
+
+## Taxonomy expansion
+
+[`db/schema/003_expand_taxonomy.sql`](db/schema/003_expand_taxonomy.sql) grows
+the controlled vocabulary from the original schema-prototyping session's 20
+tags to **188** (123 skill + 53 equipment + 12 role), plus 4 new
+`entity_types` business sub-categories (post-production house, talent/casting
+agency, event production company, ad agency). This was researched, not
+guessed — against [IMDb's professional credit categories](https://help.imdb.com/article/contribution/filmography-credits/new-credit-categories/GVX4ZP2JX4W5QWAN)
+(45 as of its Nov 2025 update) and [StudioBinder's film crew position
+guide](https://www.studiobinder.com/blog/film-crew-positions/), then extended
+with live-event/broadcast roles and equipment so the taxonomy actually covers
+this project's stated scope (film/video **and events**), not just film sets.
+
+Granular departments added (skill tags): Camera, Grip & Electric, Sound,
+Art, Costume & Wardrobe, Hair & Makeup, Production Management, Locations,
+Transportation, Catering & Craft Service, Post-Production, VFX & Animation,
+Stunts & Special Effects, Casting, Music, Choreography & Intimacy,
+Puppetry, Publicity & Marketing, Legal & Finance, Medical & Safety, and
+Live Events & Broadcast. Equipment added: camera bodies, lens sets,
+lighting instruments, grip gear, camera support, drones, sound gear,
+power/distro, live-event AV gear, and post-production tools. A smaller set
+of pure producing/directing titles (Executive Producer, Showrunner, 2nd AD,
+etc.) was added as `role`-type tags, extending the original three
+(Director, Producer, Production Coordinator).
+
+The migration also normalizes 3 pre-existing tags' `category` values
+(`Gaffer`/`Key Grip`: `Lighting`/`Grip` → `Grip & Electric`; `Sound Mixer`:
+`Sound` → `Sound Department`) so the original seed tags group consistently
+with the new ones instead of splitting into near-duplicate categories.
+
+**Applied and verified against the local dev database** (not just written):
+every `INSERT`/`UPDATE` targets the existing unique constraints with
+`ON CONFLICT ... DO NOTHING`, so the file is idempotent — confirmed by
+running it twice and seeing `INSERT 0 0` on the second pass. Did **not**
+touch `db/seed/001_sample_data.sql` or assign any new tags to the sample
+entities — this is vocabulary, not seed data. The sample full-text search
+query (`"drone"` → Priya Natarajan) was re-run afterward and still returns
+the same correct result, confirming the expansion didn't disturb existing
+search behavior.
+
+Not yet done: no new entities/equipment assignments using the expanded
+vocabulary (the sample data is unchanged), and the tag-promotion workflow
+(reviewing `free_text_skills` for values that should graduate into this
+controlled list) is still unbuilt — unchanged open items from before.
 
 ## Search prototyping — validated
 
@@ -142,6 +187,7 @@ export LC_ALL="en_US.UTF-8"
 pg_ctl -D /opt/homebrew/var/postgresql@18 -l .devdb/pg18.log start   # if not already running
 psql -d kbfa_dev -f db/schema/001_core_schema.sql   # on a fresh db
 psql -d kbfa_dev -f db/seed/001_sample_data.sql
+psql -d kbfa_dev -f db/schema/003_expand_taxonomy.sql   # expanded tag vocabulary, safe to re-run
 psql -d kbfa_dev -f db/schema/002_prototype_queries.sql
 ```
 
