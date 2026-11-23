@@ -1,12 +1,15 @@
 {
   "files.exclude": {
     "**/.devdb": true,
-    "**/__pycache__": true
+    "**/__pycache__": true,
+    "**/node_modules": true
   },
   "search.exclude": {
     "**/.devdb": true,
     "**/.venv": true,
-    "**/__pycache__": true
+    "**/__pycache__": true,
+    "**/node_modules": true,
+    "frontend/dist": true
   },
   "files.associations": {
     "*.sql": "sql"

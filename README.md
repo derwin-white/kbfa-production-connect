@@ -8,9 +8,10 @@ and production leads search/discover entities across those facets.
 ## Status
 
 Phase 0 schema design is done and validated (see `db/`). Phase 1 — a
-FastAPI backend (`backend/`) implementing the entities/tags/connections/
-projects API against that schema — is scaffolded and working locally.
-No frontend yet.
+FastAPI backend (`backend/`) and a React frontend (`frontend/`)
+implementing the entities/tags/connections/projects experience against
+that schema — are scaffolded and working locally, verified end-to-end
+in a browser against the live API.
 
 ## Backend (`backend/`)
 
@@ -30,6 +31,26 @@ Interactive API docs at `http://127.0.0.1:8000/docs` once running. No
 auth yet — matches the open "auth approach" item in the hosting section
 below. `Dockerfile` builds a container suitable for the proposed App
 Runner/Fargate deployment.
+
+## Frontend (`frontend/`)
+
+React 19 + TypeScript + Vite, routed with `react-router-dom`, data
+fetching via `@tanstack/react-query` against the backend above. Two
+screens: a search/discovery page (free-text + fuzzy search, controlled-
+tag facet picker, "near me" proximity filter via the browser's
+Geolocation API) and an entity detail page (profile, tags, connections,
+2nd-degree "people you may know"); plus a projects list and a project
+detail page showing the roster.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # VITE_API_BASE_URL, defaults to http://127.0.0.1:8000
+npm run dev
+```
+
+Needs the backend running (see above) to show real data. No auth/signup
+flow yet — matches the backend's current state.
 
 ## Decisions carried in from planning
 
