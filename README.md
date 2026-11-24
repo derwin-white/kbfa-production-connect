@@ -112,6 +112,24 @@ flow yet — matches the backend's current state. Neither the Join page
 nor the Admin screen have access control — anyone who can load the app
 can submit or manage data; revisit once auth exists.
 
+**Viewing from a phone or another device on the same network:** both
+dev servers default to binding only `localhost`. To reach them from a
+phone (same Wi-Fi), start each with `--host 0.0.0.0`:
+
+```bash
+.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000   # backend
+npm run dev -- --host 0.0.0.0 --port 5173                            # frontend
+```
+
+Then set `frontend/.env`'s `VITE_API_BASE_URL` to `http://<this
+machine's LAN IP>:8000` (find it with `ipconfig getifaddr en0` on
+macOS) — the frontend can't reach the backend via `127.0.0.1` from a
+different device, since that always means "itself." Add that same
+`http://<LAN IP>:5173` origin to `cors_origins` in
+`backend/app/config.py` (already includes this dev machine's IP,
+192.168.1.51, as of 2026-11-24 — update it if the IP changes, e.g.
+after a router reboot). Then open `http://<LAN IP>:5173` on the phone.
+
 **Color scheme (2026-11-24):** restyled to a brighter, higher-contrast
 palette using **only black, white, navy, and orange** (plus tints/shades
 of those four — no other hues), per direct request. Navy is the
