@@ -1,16 +1,31 @@
 :root {
-  --text: #3f3b45;
-  --text-h: #16131c;
-  --text-muted: #726d7a;
-  --bg: #fdfcfb;
-  --surface: #ffffff;
-  --border: #e3e0e6;
-  --accent: #8a3ffc;
-  --accent-bg: rgba(138, 63, 252, 0.08);
-  --accent-border: rgba(138, 63, 252, 0.35);
-  --success: #1a8a52;
-  --warning: #b36b00;
-  --danger: #c23a3a;
+  /* Brand palette — intentionally only four colors (black, white, navy,
+     orange), used at full strength or as tints/shades. Don't introduce
+     other hues; reach for an opacity variant of one of these four instead. */
+  --c-black: #0b0d12;
+  --c-white: #ffffff;
+  --c-navy: #0f2a55;
+  --c-navy-bright: #2a5caa;
+  --c-orange: #ff6a1a;
+  --c-orange-deep: #c9470a;
+
+  --text: var(--c-black);
+  --text-h: #000000;
+  --text-muted: rgba(11, 13, 18, 0.62);
+  --bg: var(--c-white);
+  --surface: var(--c-white);
+  --border: rgba(11, 13, 18, 0.14);
+  --accent: var(--c-orange);
+  --accent-bg: rgba(255, 106, 26, 0.12);
+  --accent-border: rgba(255, 106, 26, 0.4);
+  --navy: var(--c-navy);
+  --navy-bg: rgba(15, 42, 85, 0.08);
+  --navy-border: rgba(15, 42, 85, 0.35);
+  --success: var(--c-navy);
+  --warning: var(--c-orange-deep);
+  --danger: var(--c-orange-deep);
+  --header-bg: var(--c-navy);
+  --header-text: var(--c-white);
   --sans: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
@@ -22,18 +37,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #c9c6cf;
-    --text-h: #f3f1f6;
-    --text-muted: #938e9c;
-    --bg: #15131a;
-    --surface: #1d1b24;
-    --border: #312e3a;
-    --accent: #b388ff;
-    --accent-bg: rgba(179, 136, 255, 0.12);
-    --accent-border: rgba(179, 136, 255, 0.4);
-    --success: #4fd187;
-    --warning: #e0a94a;
-    --danger: #ef6a6a;
+    --text: rgba(255, 255, 255, 0.92);
+    --text-h: var(--c-white);
+    --text-muted: rgba(255, 255, 255, 0.62);
+    --bg: #07080b;
+    --surface: #12141b;
+    --border: rgba(255, 255, 255, 0.14);
+    --accent: var(--c-orange);
+    --accent-bg: rgba(255, 106, 26, 0.18);
+    --accent-border: rgba(255, 106, 26, 0.45);
+    --navy: var(--c-navy-bright);
+    --navy-bg: rgba(42, 92, 170, 0.2);
+    --navy-border: rgba(42, 92, 170, 0.45);
+    --success: var(--c-navy-bright);
+    --warning: #ff8a4a;
+    --danger: #ff8a4a;
+    --header-bg: #050912;
+    --header-text: var(--c-white);
   }
 }
 
@@ -81,13 +101,14 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+  background: var(--header-bg);
+  color: var(--header-text);
 }
 
 .app-header__wordmark {
   font-weight: 700;
   font-size: 17px;
-  color: var(--text-h);
+  color: var(--header-text);
 }
 
 .app-header nav {
@@ -96,14 +117,14 @@ a {
 }
 
 .app-header nav a {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.72);
   font-weight: 500;
   padding: 6px 2px;
   border-bottom: 2px solid transparent;
 }
 
 .app-header nav a.active {
-  color: var(--text-h);
+  color: var(--header-text);
   border-bottom-color: var(--accent);
 }
 
@@ -266,8 +287,14 @@ main {
 }
 
 .tag-chip--equipment {
+  background: var(--navy-bg);
+  color: var(--navy);
+  border-color: var(--navy-border);
+}
+
+.tag-chip--role {
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text);
   border-color: var(--border);
 }
 
@@ -326,8 +353,8 @@ main {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--accent-bg);
-  color: var(--accent);
+  background: var(--navy-bg);
+  color: var(--navy);
   text-transform: capitalize;
 }
 
@@ -338,8 +365,8 @@ main {
 }
 
 .status-chip--active {
-  background: rgba(26, 138, 82, 0.1);
-  color: var(--success);
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 
 .btn {
@@ -479,4 +506,128 @@ main {
 
 .entity-table .entity-card__tags {
   margin-top: 0;
+}
+
+.btn--small {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.tag-suggestion--readonly {
+  cursor: default;
+}
+
+.tag-duplicate-hint {
+  margin: -4px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--navy-border);
+  background: var(--navy-bg);
+  border-radius: 8px;
+}
+
+.tag-duplicate-hint__label {
+  display: block;
+  font-size: 12px;
+  color: var(--navy);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tag-picker {
+  margin-bottom: 18px;
+  padding-bottom: 4px;
+}
+
+.tag-picker__empty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tag-resolution-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.tag-resolution--existing {
+  color: var(--navy);
+}
+
+.tag-resolution--new {
+  color: var(--accent);
+}
+
+.admin-page__manage-tags {
+  margin-top: 18px;
+}
+
+.manage-tags-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.manage-tags-group h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.manage-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.manage-tags-row:last-child {
+  border-bottom: none;
+}
+
+.manage-tags-row__aliases {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.manage-tags-row__confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.join-page {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.join-page__hero {
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-radius: 12px;
+  padding: 28px 24px;
+  margin-bottom: 20px;
+}
+
+.join-page__hero h2 {
+  color: var(--header-text);
+  margin-bottom: 6px;
+}
+
+.join-page__hero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.join-page__form h3 {
+  margin-top: 22px;
 }

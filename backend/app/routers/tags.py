@@ -1,7 +1,8 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import or_, select
+from fastapi import APIRouter, Depends, Query, Response
+from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -31,12 +32,41 @@ async def list_tags(
     return result.scalars().all()
 
 
-@router.post("/", response_model=TagOut, status_code=201)
-async def create_tag(payload: TagCreate, db: AsyncSession = Depends(get_db)):
+async def _find_existing(db: AsyncSession, tag_type: str, label: str) -> Tag | None:
+    stmt = select(Tag).where(Tag.tag_type == tag_type, func.lower(Tag.label) == label.lower())
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+@router.post("/", response_model=TagOut)
+async def create_tag(payload: TagCreate, response: Response, db: AsyncSession = Depends(get_db)):
+    """Find-or-create, keyed on the same (tag_type, lower(label)) uniqueness
+    the DB enforces — this is the main duplicate-prevention backstop behind
+    the frontend's type-ahead: submitting a label that already exists (same
+    type, case-insensitive) returns the EXISTING tag (200) instead of
+    erroring or creating a second row. A brand-new label creates normally
+    (201). Also closes a race where two callers submit the same new label
+    at once — the loser's IntegrityError is caught and resolved to the
+    winner's row rather than surfaced as a 500.
+    """
+    existing = await _find_existing(db, payload.tag_type, payload.label)
+    if existing is not None:
+        response.status_code = 200
+        return existing
+
     tag = Tag(tag_type=payload.tag_type, label=payload.label, category=payload.category, aliases=payload.aliases)
     db.add(tag)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing = await _find_existing(db, payload.tag_type, payload.label)
+        if existing is None:
+            raise
+        response.status_code = 200
+        return existing
+
     await db.refresh(tag)
+    response.status_code = 201
     return tag
 
 

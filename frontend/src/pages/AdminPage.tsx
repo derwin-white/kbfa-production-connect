@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import type { Tag } from "../api/types";
 
 type Toast = { id: number; kind: "success" | "error"; message: string };
 
@@ -29,196 +31,21 @@ function ToastStack({ toasts }: { toasts: Toast[] }) {
   );
 }
 
-function AddEntityForm({ onToast }: { onToast: (kind: Toast["kind"], message: string) => void }) {
-  const queryClient = useQueryClient();
-  const [entityTypeId, setEntityTypeId] = useState("");
-  const [name, setName] = useState("");
-  const [headline, setHeadline] = useState("");
-  const [bio, setBio] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [website, setWebsite] = useState("");
-  const [locationLabel, setLocationLabel] = useState("");
-  const [freeTextSkills, setFreeTextSkills] = useState("");
-  const [tagQuery, setTagQuery] = useState("");
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-
-  const entityTypesQuery = useQuery({ queryKey: ["entity-types"], queryFn: () => api.entityTypes.list() });
-  const tagSuggestionsQuery = useQuery({
-    queryKey: ["tags", tagQuery],
-    queryFn: () => api.tags.list({ q: tagQuery || undefined }),
-    enabled: tagQuery.length > 0,
-  });
-
-  const createEntity = useMutation({
-    mutationFn: async () => {
-      const contact: Record<string, string> = {};
-      if (email) contact.email = email;
-      if (phone) contact.phone = phone;
-      if (website) contact.website = website;
-
-      const entity = await api.entities.create({
-        entity_type_id: Number(entityTypeId),
-        name,
-        headline: headline || undefined,
-        bio: bio || undefined,
-        contact,
-        free_text_skills: freeTextSkills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        location_label: locationLabel || undefined,
-      });
-      for (const tagId of selectedTagIds) {
-        await api.entities.addTag(entity.id, tagId);
-      }
-      return entity;
-    },
-    onSuccess: (entity) => {
-      onToast("success", `Created "${entity.name}".`);
-      queryClient.invalidateQueries({ queryKey: ["entity-search"] });
-      setEntityTypeId("");
-      setName("");
-      setHeadline("");
-      setBio("");
-      setEmail("");
-      setPhone("");
-      setWebsite("");
-      setLocationLabel("");
-      setFreeTextSkills("");
-      setTagQuery("");
-      setSelectedTagIds([]);
-    },
-    onError: (err) => onToast("error", `Couldn't create entity: ${(err as Error).message}`),
-  });
-
-  function toggleTag(tagId: string) {
-    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
-  }
-
-  const selectedTags = tagSuggestionsQuery.data?.filter((t) => selectedTagIds.includes(t.id)) ?? [];
-
-  return (
-    <section className="panel">
-      <h3>Add a person or business</h3>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          createEntity.mutate();
-        }}
-      >
-        <label className="field">
-          <span>Type</span>
-          <select value={entityTypeId} onChange={(e) => setEntityTypeId(e.target.value)} required>
-            <option value="" disabled>
-              Select a type…
-            </option>
-            {entityTypesQuery.data?.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="field">
-          <span>Name</span>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-
-        <label className="field">
-          <span>Headline</span>
-          <input
-            type="text"
-            placeholder="e.g. Freelance Gaffer, NY/NJ"
-            value={headline}
-            onChange={(e) => setHeadline(e.target.value)}
-          />
-        </label>
-
-        <label className="field">
-          <span>Bio</span>
-          <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
-        </label>
-
-        <div className="form-row">
-          <label className="field">
-            <span>Email</span>
-            <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </label>
-          <label className="field">
-            <span>Phone</span>
-            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </label>
-        </div>
-
-        <label className="field">
-          <span>Website</span>
-          <input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} />
-        </label>
-
-        <label className="field">
-          <span>Location</span>
-          <input
-            type="text"
-            placeholder="e.g. Brooklyn, NY"
-            value={locationLabel}
-            onChange={(e) => setLocationLabel(e.target.value)}
-          />
-        </label>
-
-        <label className="field">
-          <span>Free-text skills (comma-separated, for anything not in the tag list below)</span>
-          <input type="text" value={freeTextSkills} onChange={(e) => setFreeTextSkills(e.target.value)} />
-        </label>
-
-        <label className="field">
-          <span>Skills / equipment / roles</span>
-          <input
-            type="text"
-            placeholder="Start typing to find a tag…"
-            value={tagQuery}
-            onChange={(e) => setTagQuery(e.target.value)}
-          />
-        </label>
-        {tagQuery && tagSuggestionsQuery.data && (
-          <div className="tag-suggestions">
-            {tagSuggestionsQuery.data.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                className={`tag-suggestion ${selectedTagIds.includes(tag.id) ? "tag-suggestion--selected" : ""}`}
-                onClick={() => toggleTag(tag.id)}
-              >
-                {tag.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {selectedTags.length > 0 && (
-          <div className="selected-tags">
-            {selectedTags.map((tag) => (
-              <button key={tag.id} type="button" className="selected-tag" onClick={() => toggleTag(tag.id)}>
-                {tag.label} ✕
-              </button>
-            ))}
-          </div>
-        )}
-
-        <button type="submit" className="btn btn--primary" disabled={!entityTypeId || !name || createEntity.isPending}>
-          {createEntity.isPending ? "Creating…" : "Add entity"}
-        </button>
-      </form>
-    </section>
-  );
-}
-
 function AddTagForm({ onToast }: { onToast: (kind: Toast["kind"], message: string) => void }) {
   const queryClient = useQueryClient();
   const [tagType, setTagType] = useState<"skill" | "equipment" | "role">("skill");
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState("");
   const [aliases, setAliases] = useState("");
+
+  // Duplicate-prevention: show what already exists for this type as the
+  // admin types a label, before they submit a possible duplicate.
+  const matchesQuery = useQuery({
+    queryKey: ["tags", tagType, label],
+    queryFn: () => api.tags.list({ tag_type: tagType, q: label }),
+    enabled: label.trim().length > 1,
+  });
+  const exactMatch = matchesQuery.data?.find((t) => t.label.toLowerCase() === label.trim().toLowerCase());
 
   const createTag = useMutation({
     mutationFn: () =>
@@ -232,7 +59,7 @@ function AddTagForm({ onToast }: { onToast: (kind: Toast["kind"], message: strin
           .filter(Boolean),
       }),
     onSuccess: (tag) => {
-      onToast("success", `Added tag "${tag.label}".`);
+      onToast("success", `Saved "${tag.label}".`);
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       setLabel("");
       setCategory("");
@@ -245,8 +72,8 @@ function AddTagForm({ onToast }: { onToast: (kind: Toast["kind"], message: strin
     <section className="panel">
       <h3>Add a skill, equipment, or role tag</h3>
       <p className="panel__hint">
-        For a new vocabulary entry that isn't covered yet — not for one-off skills specific to a single person (use
-        their free-text skills field for that instead).
+        For a new vocabulary entry that isn't covered yet. Submitting an exact match of an existing tag (same type,
+        same label) reuses that tag instead of creating a duplicate.
       </p>
       <form
         onSubmit={(e) => {
@@ -274,6 +101,21 @@ function AddTagForm({ onToast }: { onToast: (kind: Toast["kind"], message: strin
           />
         </label>
 
+        {label.trim().length > 1 && matchesQuery.data && matchesQuery.data.length > 0 && (
+          <div className="tag-duplicate-hint">
+            <span className="tag-duplicate-hint__label">
+              {exactMatch ? "This already exists:" : `Similar ${tagType} tags already exist:`}
+            </span>
+            <div className="tag-suggestions">
+              {matchesQuery.data.map((tag: Tag) => (
+                <span key={tag.id} className="tag-suggestion tag-suggestion--readonly">
+                  {tag.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <label className="field">
           <span>Category</span>
           <input
@@ -286,16 +128,11 @@ function AddTagForm({ onToast }: { onToast: (kind: Toast["kind"], message: strin
 
         <label className="field">
           <span>Aliases (comma-separated)</span>
-          <input
-            type="text"
-            placeholder="e.g. UWLT"
-            value={aliases}
-            onChange={(e) => setAliases(e.target.value)}
-          />
+          <input type="text" placeholder="e.g. UWLT" value={aliases} onChange={(e) => setAliases(e.target.value)} />
         </label>
 
         <button type="submit" className="btn btn--primary" disabled={!label || createTag.isPending}>
-          {createTag.isPending ? "Adding…" : "Add tag"}
+          {createTag.isPending ? "Saving…" : exactMatch ? "Use existing tag" : "Add tag"}
         </button>
       </form>
     </section>
@@ -387,21 +224,148 @@ function AddProjectForm({ onToast }: { onToast: (kind: Toast["kind"], message: s
   );
 }
 
+const TAG_TYPES = ["skill", "equipment", "role"] as const;
+
+function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message: string) => void }) {
+  const queryClient = useQueryClient();
+  const [tagType, setTagType] = useState<"" | (typeof TAG_TYPES)[number]>("");
+  const [q, setQ] = useState("");
+
+  // Plain substring filtering client-side, not the shared /tags?q= fuzzy
+  // search — that endpoint uses trigram similarity, which is tuned for
+  // typo-tolerant discovery and misses short literal substrings (e.g.
+  // searching "QA" won't fuzzy-match "QA Brand New Skill"). An admin
+  // browsing/managing the vocabulary wants plain "contains", so fetch by
+  // type and filter here instead.
+  const tagsQuery = useQuery({
+    queryKey: ["tags", "manage", tagType],
+    queryFn: () => api.tags.list({ tag_type: tagType || undefined }),
+  });
+
+  const filteredTags = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return tagsQuery.data ?? [];
+    return (tagsQuery.data ?? []).filter(
+      (tag) =>
+        tag.label.toLowerCase().includes(needle) ||
+        (tag.category ?? "").toLowerCase().includes(needle) ||
+        (tag.aliases ?? []).some((a) => a.toLowerCase().includes(needle)),
+    );
+  }, [tagsQuery.data, q]);
+
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  const deactivate = useMutation({
+    mutationFn: (tagId: string) => api.tags.deactivate(tagId),
+    onSuccess: (_void, tagId) => {
+      const tag = tagsQuery.data?.find((t) => t.id === tagId);
+      onToast("success", `Deactivated "${tag?.label ?? "tag"}".`);
+      setConfirmingId(null);
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    },
+    onError: (err) => onToast("error", `Couldn't deactivate: ${(err as Error).message}`),
+  });
+
+  const grouped = useMemo(() => {
+    const groups = new Map<string, Tag[]>();
+    for (const tag of filteredTags) {
+      const key = tag.category ?? "Uncategorized";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(tag);
+    }
+    return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredTags]);
+
+  return (
+    <section className="panel admin-page__manage-tags">
+      <h3>Manage tags</h3>
+      <p className="panel__hint">
+        Deactivate tags that shouldn't be in use — this is a soft delete (the tag record stays, it just stops
+        appearing in search, type-ahead, and the picker on the submission form). There's no "reactivate" yet.
+      </p>
+      <div className="form-row">
+        <label className="field">
+          <span>Type</span>
+          <select value={tagType} onChange={(e) => setTagType(e.target.value as typeof tagType)}>
+            <option value="">All</option>
+            <option value="skill">Skill</option>
+            <option value="equipment">Equipment</option>
+            <option value="role">Role</option>
+          </select>
+        </label>
+        <label className="field">
+          <span>Search</span>
+          <input type="text" placeholder="Filter by label or alias…" value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
+      </div>
+
+      {tagsQuery.isLoading && <p>Loading…</p>}
+      {tagsQuery.data && filteredTags.length === 0 && <p>No matching active tags.</p>}
+
+      <div className="manage-tags-list">
+        {grouped.map(([category, tags]) => (
+          <div key={category} className="manage-tags-group">
+            <h4>{category}</h4>
+            <ul className="plain-list">
+              {tags.map((tag) => (
+                <li key={tag.id} className="manage-tags-row">
+                  <span className={`tag-chip tag-chip--${tag.tag_type}`}>{tag.label}</span>
+                  {tag.aliases && tag.aliases.length > 0 && (
+                    <span className="manage-tags-row__aliases">aka {tag.aliases.join(", ")}</span>
+                  )}
+                  {confirmingId === tag.id ? (
+                    <span className="manage-tags-row__confirm">
+                      <span>Deactivate?</span>
+                      <button
+                        type="button"
+                        className="btn btn--primary btn--small"
+                        onClick={() => deactivate.mutate(tag.id)}
+                        disabled={deactivate.isPending}
+                      >
+                        {deactivate.isPending ? "…" : "Yes"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--small"
+                        onClick={() => setConfirmingId(null)}
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn--secondary btn--small"
+                      onClick={() => setConfirmingId(tag.id)}
+                    >
+                      Deactivate
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function AdminPage() {
   const { toasts, push } = useToasts();
 
   return (
     <div className="admin-page">
-      <h2>Admin — enter data</h2>
+      <h2>Admin</h2>
       <p className="panel__hint">
-        Add entities, controlled-vocabulary tags, and projects directly. Everything here is saved immediately to the
-        live database — there's no draft/review step yet.
+        Manage the controlled vocabulary and projects. To add a person or business, use{" "}
+        <Link to="/join">List yourself</Link> — the same form the public uses.
       </p>
       <div className="admin-page__grid">
-        <AddEntityForm onToast={push} />
         <AddTagForm onToast={push} />
         <AddProjectForm onToast={push} />
       </div>
+      <ManageTagsSection onToast={push} />
       <ToastStack toasts={toasts} />
     </div>
   );

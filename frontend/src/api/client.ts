@@ -51,6 +51,7 @@ export const api = {
       request<Tag[]>(`/tags/${buildQuery(params)}`),
     create: (payload: TagCreateInput) =>
       request<Tag>("/tags/", { method: "POST", body: JSON.stringify(payload) }),
+    deactivate: (tagId: string) => request<void>(`/tags/${tagId}`, { method: "DELETE" }),
   },
 
   entities: {

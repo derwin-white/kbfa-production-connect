@@ -1,6 +1,7 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import { AdminPage } from "./pages/AdminPage";
 import { EntityDetailPage } from "./pages/EntityDetailPage";
+import { JoinPage } from "./pages/JoinPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { SearchPage } from "./pages/SearchPage";
@@ -15,6 +16,7 @@ function App() {
             Search
           </NavLink>
           <NavLink to="/projects">Projects</NavLink>
+          <NavLink to="/join">List Yourself</NavLink>
           <NavLink to="/admin">Admin</NavLink>
         </nav>
       </header>
@@ -24,6 +26,7 @@ function App() {
           <Route path="/entities/:entityId" element={<EntityDetailPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+          <Route path="/join" element={<JoinPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>

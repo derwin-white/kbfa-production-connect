@@ -32,6 +32,17 @@ auth yet — matches the open "auth approach" item in the hosting section
 below. `Dockerfile` builds a container suitable for the proposed App
 Runner/Fargate deployment.
 
+**Duplicate-prevention (2026-11-24):** `POST /tags/` is now find-or-create,
+keyed on the same `(tag_type, lower(label))` uniqueness the DB already
+enforces — submitting a label that already exists (same type,
+case-insensitive) returns the **existing** tag (`200`) instead of
+erroring or creating a second row; a genuinely new label still creates
+normally (`201`). Also closes a race where two callers submit the same
+new label at once (the loser's `IntegrityError` resolves to the
+winner's row instead of a 500). This is the backend backstop behind the
+frontend's type-ahead/duplicate-hint UI described below — belt and
+suspenders, not either/or.
+
 **Fixed bug (2026-11-24):** `POST /entities/` and `POST /projects/` were
 broken since the backend was first scaffolded — the `Entity`/`Project`
 SQLAlchemy models mapped `search_vector` as a plain column, so the ORM
@@ -59,11 +70,26 @@ fetching via `@tanstack/react-query` against the backend above. Screens:
 - **Entity detail** — profile, tags, connections, 2nd-degree "people you
   may know."
 - **Projects** — list + detail page showing the roster.
-- **Admin** — forms to add a person/business (with controlled-tag
-  attachment via the same type-ahead picker used in Search), add a new
-  skill/equipment/role tag, and add a project. Everything saves directly
-  to the live database via the existing backend CRUD endpoints — no
-  draft/review step.
+- **List Yourself** (`/join`) — the **public-facing, customer-facing**
+  form for a person or business to submit themselves: profile fields plus
+  three `TagPicker` sections (Skills / Equipment / Roles), each with a
+  type-ahead search against the existing controlled vocabulary (so a
+  submitter sees what's already there before typing something new) and a
+  comma-separated freeform field for anything not found, with a live
+  per-term preview ("already exists as X" vs. "will be created new")
+  before they even submit. New tags created this way are tagged
+  `category: "User Submitted"` so an admin can find and review them later.
+  Deliberately kept separate from the Admin screen — this is the one form
+  the public actually sees.
+- **Admin** — a new skill/equipment/role tag form (same duplicate-hint
+  pattern as above, scoped to one label instead of a comma list), add a
+  project, and a **Manage Tags** section: browse/filter active tags and
+  deactivate (soft-delete) ones that shouldn't be in use — an inline
+  "Deactivate? Yes/Cancel" step, not a native `confirm()` dialog, so it
+  stays consistent and testable. A deactivated tag keeps its row (nothing
+  is hard-deleted) but stops appearing in search, type-ahead, and the
+  Join page's picker. Entity creation lives on the Join page now, not
+  here — the Admin screen only manages vocabulary and projects.
 
 ```bash
 cd frontend
@@ -73,9 +99,21 @@ npm run dev
 ```
 
 Needs the backend running (see above) to show real data. No auth/signup
-flow yet — matches the backend's current state. The Admin screen has no
-access control either — anyone who can load the app can write to the
-database; revisit once auth exists.
+flow yet — matches the backend's current state. Neither the Join page
+nor the Admin screen have access control — anyone who can load the app
+can submit or manage data; revisit once auth exists.
+
+**Color scheme (2026-11-24):** restyled to a brighter, higher-contrast
+palette using **only black, white, navy, and orange** (plus tints/shades
+of those four — no other hues), per direct request. Navy is the
+structural color (header band, equipment tag chips, default status
+chips); orange is the single interactive accent (primary buttons, active
+nav/view-toggle state, skill tag chips, "active" status); black/white
+are text and background, flipping normally between light/dark
+`prefers-color-scheme`. All existing components kept working unchanged
+because they already referenced CSS custom properties (`--accent`,
+`--success`, etc.) rather than hardcoded colors — only the token
+*values* in `index.css`'s `:root` changed, not each component's rules.
 
 ## Decisions carried in from planning
 
@@ -266,18 +304,20 @@ Open items to confirm with the user before provisioning anything real:
 Tracked on the project's own [GitHub Projects backlog](https://github.com/users/derwin-white/projects/1/views/1).
 As of 2026-11-24:
 
-- **Done this round:** granular taxonomy expansion (227 tags — see
-  "Taxonomy expansion" above); the Admin screen for entering data
-  (entities, tags, projects — backlog #4); Cards/List view toggle for
-  search results (backlog #1).
-- **Still open on the backlog:** allow users to submit custom skill/
-  equipment tags beyond the controlled vocabulary (#3, a self-service
-  version of what the Admin tag form currently does as an unrestricted
-  "anyone can add a tag" form).
-- **Still open, not yet on the backlog as separate items:** stand up
-  Aurora PostgreSQL Serverless v2 and confirm PostGIS/`pg_trgm` there;
-  decide an auth approach (the Admin screen currently has none); build
-  the tag-promotion workflow (reviewing `free_text_skills` for values
-  that should graduate into the controlled vocabulary); AWS hosting
-  specifics (region, scale) still need confirming with the user per the
-  table above.
+- **Done:** granular taxonomy expansion, now 227 tags (see "Taxonomy
+  expansion" above); the Admin screen for entering vocabulary/projects
+  (backlog #4); Cards/List view toggle for search results (backlog #1);
+  the Join page (`/join`) letting the public submit custom skill/
+  equipment/role tags beyond the controlled vocabulary via its
+  comma-separated freeform fields, each new tag landing in a "User
+  Submitted" category for review (backlog #3); duplicate-prevention
+  (type-ahead + backend find-or-create) across every tag-creation path.
+- **Still open, not yet on the backlog as separate items:** a real
+  moderation view for "User Submitted" tags (right now an admin finds
+  them the same way as anything else, via Manage Tags' category
+  grouping — there's no dedicated review queue); stand up Aurora
+  PostgreSQL Serverless v2 and confirm PostGIS/`pg_trgm` there; decide an
+  auth approach (neither Join nor Admin have any); build the
+  tag-promotion workflow for `free_text_skills`; AWS hosting specifics
+  (region, scale) still need confirming with the user per the table
+  above.
