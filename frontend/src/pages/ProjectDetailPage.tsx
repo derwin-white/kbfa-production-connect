@@ -20,8 +20,8 @@ function JoinProjectSection({ projectId }: { projectId: string }) {
   });
 
   const roleSuggestionsQuery = useQuery({
-    queryKey: ["tags", "join-picker", roleQuery],
-    queryFn: () => api.tags.list({ q: roleQuery }),
+    queryKey: ["tags", "role", "join-picker", roleQuery],
+    queryFn: () => api.tags.list({ tag_type: "role", q: roleQuery }),
     enabled: roleQuery.length > 0 && !selectedRole,
   });
 
