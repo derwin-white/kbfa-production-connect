@@ -1,9 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { EntityCard } from "../components/EntityCard";
+import { TagChip } from "../components/TagChip";
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+const VIEW_MODES = ["cards", "list"] as const;
+type ViewMode = (typeof VIEW_MODES)[number];
+const VIEW_STORAGE_KEY = "kbfa.search.viewMode";
+
+function loadStoredViewMode(): ViewMode {
+  if (typeof window === "undefined") return "cards";
+  const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+  return stored === "list" ? "list" : "cards";
+}
 
 export function SearchPage() {
   const [q, setQ] = useState("");
@@ -14,6 +25,12 @@ export function SearchPage() {
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [radiusMiles, setRadiusMiles] = useState(25);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(loadStoredViewMode);
+
+  function changeViewMode(mode: ViewMode) {
+    setViewMode(mode);
+    window.localStorage.setItem(VIEW_STORAGE_KEY, mode);
+  }
 
   const entityTypesQuery = useQuery({
     queryKey: ["entity-types"],
@@ -150,14 +167,72 @@ export function SearchPage() {
       </div>
 
       <div className="search-page__results">
+        <div className="view-toggle" role="group" aria-label="Results view">
+          {VIEW_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`view-toggle__btn ${viewMode === mode ? "active" : ""}`}
+              onClick={() => changeViewMode(mode)}
+            >
+              {mode === "cards" ? "Cards" : "List"}
+            </button>
+          ))}
+        </div>
+
         {resultsQuery.isLoading && <p>Searching…</p>}
         {resultsQuery.isError && <p className="field-error">Couldn't load results. Is the API running?</p>}
         {resultsQuery.data && resultsQuery.data.length === 0 && <p>No matches. Try broadening your filters.</p>}
-        <div className="entity-grid">
-          {resultsQuery.data?.map((entity) => (
-            <EntityCard key={entity.id} entity={entity} />
-          ))}
-        </div>
+
+        {viewMode === "cards" ? (
+          <div className="entity-grid">
+            {resultsQuery.data?.map((entity) => (
+              <EntityCard key={entity.id} entity={entity} />
+            ))}
+          </div>
+        ) : (
+          resultsQuery.data &&
+          resultsQuery.data.length > 0 && (
+            <table className="entity-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Headline / Location</th>
+                  <th>Tags</th>
+                  {useLocation && <th>Distance</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {resultsQuery.data.map((entity) => {
+                  const typeLabel = entityTypesQuery.data?.find((t) => t.id === entity.entity_type_id)?.label;
+                  return (
+                    <tr key={entity.id}>
+                      <td>
+                        <Link to={`/entities/${entity.id}`}>{entity.name}</Link>
+                      </td>
+                      <td>{typeLabel ?? "—"}</td>
+                      <td>
+                        {entity.headline && <div>{entity.headline}</div>}
+                        {entity.location_label && <div className="entity-card__location">{entity.location_label}</div>}
+                      </td>
+                      <td>
+                        {entity.tags.length > 0 && (
+                          <div className="entity-card__tags">
+                            {entity.tags.slice(0, 6).map((tag) => (
+                              <TagChip key={tag.id} tag={tag} />
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      {useLocation && <td>{entity.distance_miles != null ? `${entity.distance_miles.toFixed(1)} mi` : "—"}</td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )
+        )}
       </div>
     </div>
   );

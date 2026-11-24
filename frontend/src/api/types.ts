@@ -74,3 +74,32 @@ export interface EntitySearchParams {
   limit?: number;
   offset?: number;
 }
+
+export interface EntityCreateInput {
+  entity_type_id: number;
+  name: string;
+  headline?: string;
+  bio?: string;
+  contact?: Record<string, string>;
+  free_text_skills?: string[];
+  location_label?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface TagCreateInput {
+  tag_type: "skill" | "equipment" | "role";
+  label: string;
+  category?: string;
+  aliases?: string[];
+}
+
+export interface ProjectCreateInput {
+  name: string;
+  description?: string;
+  project_type?: string;
+  status?: string;
+  location_label?: string;
+  start_date?: string;
+  end_date?: string;
+}

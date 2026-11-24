@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from geoalchemy2 import Geography
-from sqlalchemy import ForeignKey, Text, text
+from sqlalchemy import FetchedValue, ForeignKey, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,7 +25,9 @@ class Project(Base):
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)
     created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
-    search_vector = mapped_column(TSVECTOR)
+    # GENERATED ALWAYS ... STORED in the DB (001_core_schema.sql) — see the
+    # identical note on Entity.search_vector in app/models/entities.py.
+    search_vector = mapped_column(TSVECTOR, server_default=FetchedValue())
 
 
 class ProjectMember(Base):

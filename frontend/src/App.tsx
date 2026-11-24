@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import { AdminPage } from "./pages/AdminPage";
 import { EntityDetailPage } from "./pages/EntityDetailPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -14,6 +15,7 @@ function App() {
             Search
           </NavLink>
           <NavLink to="/projects">Projects</NavLink>
+          <NavLink to="/admin">Admin</NavLink>
         </nav>
       </header>
       <main>
@@ -22,6 +24,7 @@ function App() {
           <Route path="/entities/:entityId" element={<EntityDetailPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>
     </div>

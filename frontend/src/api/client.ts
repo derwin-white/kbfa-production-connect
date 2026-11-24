@@ -1,12 +1,15 @@
 import type {
   ConnectedEntity,
   Entity,
+  EntityCreateInput,
   EntitySearchParams,
   EntitySearchResult,
   EntityType,
   Project,
+  ProjectCreateInput,
   ProjectMember,
   Tag,
+  TagCreateInput,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -46,12 +49,18 @@ export const api = {
   tags: {
     list: (params: { tag_type?: string; q?: string } = {}) =>
       request<Tag[]>(`/tags/${buildQuery(params)}`),
+    create: (payload: TagCreateInput) =>
+      request<Tag>("/tags/", { method: "POST", body: JSON.stringify(payload) }),
   },
 
   entities: {
     search: (params: EntitySearchParams) =>
       request<EntitySearchResult[]>(`/entities/${buildQuery(params)}`),
     get: (id: string) => request<EntitySearchResult>(`/entities/${id}`),
+    create: (payload: EntityCreateInput) =>
+      request<Entity>("/entities/", { method: "POST", body: JSON.stringify(payload) }),
+    addTag: (entityId: string, tagId: string) =>
+      request<void>(`/entities/${entityId}/tags/${tagId}`, { method: "POST" }),
   },
 
   connections: {
@@ -66,6 +75,8 @@ export const api = {
       request<Project[]>(`/projects/${buildQuery(params)}`),
     get: (id: string) => request<Project>(`/projects/${id}`),
     members: (id: string) => request<ProjectMember[]>(`/projects/${id}/members`),
+    create: (payload: ProjectCreateInput) =>
+      request<Project>("/projects/", { method: "POST", body: JSON.stringify(payload) }),
   },
 };
 

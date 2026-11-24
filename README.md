@@ -32,15 +32,38 @@ auth yet — matches the open "auth approach" item in the hosting section
 below. `Dockerfile` builds a container suitable for the proposed App
 Runner/Fargate deployment.
 
+**Fixed bug (2026-11-24):** `POST /entities/` and `POST /projects/` were
+broken since the backend was first scaffolded — the `Entity`/`Project`
+SQLAlchemy models mapped `search_vector` as a plain column, so the ORM
+tried to INSERT an explicit `NULL` into it; Postgres rejects that for a
+`GENERATED ALWAYS ... STORED` column with `cannot insert a non-DEFAULT
+value into column "search_vector"`. Fixed by adding
+`server_default=FetchedValue()` to both models' `search_vector` mapping
+(`app/models/entities.py`, `app/models/projects.py`) — this tells
+SQLAlchemy not to send the column on INSERT/UPDATE and to read the
+server-computed value back instead. Caught while building the admin
+screen below, which was the first thing to actually exercise entity/
+project creation end-to-end through a UI.
+
 ## Frontend (`frontend/`)
 
 React 19 + TypeScript + Vite, routed with `react-router-dom`, data
-fetching via `@tanstack/react-query` against the backend above. Two
-screens: a search/discovery page (free-text + fuzzy search, controlled-
-tag facet picker, "near me" proximity filter via the browser's
-Geolocation API) and an entity detail page (profile, tags, connections,
-2nd-degree "people you may know"); plus a projects list and a project
-detail page showing the roster.
+fetching via `@tanstack/react-query` against the backend above. Screens:
+
+- **Search** — free-text + fuzzy search, controlled-tag facet picker,
+  "near me" proximity filter via the browser's Geolocation API, and a
+  **Cards / List view toggle** (remembered in `localStorage`) — Cards is
+  the original card-grid layout, List is a dense table (Name, Type,
+  Headline/Location, Tags, Distance when location filtering is active)
+  for scanning more results at once.
+- **Entity detail** — profile, tags, connections, 2nd-degree "people you
+  may know."
+- **Projects** — list + detail page showing the roster.
+- **Admin** — forms to add a person/business (with controlled-tag
+  attachment via the same type-ahead picker used in Search), add a new
+  skill/equipment/role tag, and add a project. Everything saves directly
+  to the live database via the existing backend CRUD endpoints — no
+  draft/review step.
 
 ```bash
 cd frontend
@@ -50,7 +73,9 @@ npm run dev
 ```
 
 Needs the backend running (see above) to show real data. No auth/signup
-flow yet — matches the backend's current state.
+flow yet — matches the backend's current state. The Admin screen has no
+access control either — anyone who can load the app can write to the
+database; revisit once auth exists.
 
 ## Decisions carried in from planning
 
@@ -141,6 +166,23 @@ vocabulary (the sample data is unchanged), and the tag-promotion workflow
 (reviewing `free_text_skills` for values that should graduate into this
 controlled list) is still unbuilt — unchanged open items from before.
 
+**Wave 2 (2026-11-24):** [`db/schema/004_expand_taxonomy_wave2.sql`](db/schema/004_expand_taxonomy_wave2.sql)
+adds another **38 tags** (19 skill + 19 equipment) — real Canon Cinema
+EOS and Sony Cinema Line camera models (C50/C70/C80/C400/C500 Mark II/
+R5 C, Burano/FX3/FX30/VENICE), named lighting flagships (Nanlux, Litepanels,
+Godox, Quasar Science), two lens sets, live-event AV gear (teleprompter,
+wireless video, vision-mixer hardware, intercom), and office/development/
+documentary/VFX/live-event roles (Development Executive, Script
+Coordinator, Field Producer, Documentary Researcher, Pipeline TD, Floor
+Manager, Festival Director, etc.) that wave 1 didn't reach. Sourced from
+Canon's and Sony's own product pages/newsroom and trade-press lighting
+roundups, not guessed. Total vocabulary is now **227 tags** (142 skill +
+73 equipment + 12 role). Same idempotent `ON CONFLICT DO NOTHING` pattern,
+verified the same way (applied, re-run to confirm no-op, existing search
+query re-checked). Note: `Executive Producer` (role) and `Location
+Manager` (skill) were requested again in this round but were already
+added in wave 1 — not duplicated.
+
 ## Search prototyping — validated
 
 [`db/schema/002_prototype_queries.sql`](db/schema/002_prototype_queries.sql)
@@ -221,16 +263,21 @@ Open items to confirm with the user before provisioning anything real:
 
 ## Next steps
 
-1. Pick the backend framework/language and confirm the AWS hosting
-   specifics above with the user.
-2. Stand up Aurora PostgreSQL Serverless v2 (dev cluster) from this same
-   schema, confirm PostGIS/`pg_trgm` are available on it the same as the
-   local prototype.
-3. Decide on an auth approach for entities managing their own profiles.
-4. Start the backend API (entities CRUD, tag/skill management, search
-   endpoint, connections, projects) against this schema.
-5. Start the frontend (entity profile pages, search UI, connection
-   requests, project rosters).
-6. Build the tag-promotion workflow (reviewing `free_text_skills` entries
-   across entities and promoting common ones into `tags`) — not needed
-   for launch, but needed soon after to keep the hybrid taxonomy healthy.
+Tracked on the project's own [GitHub Projects backlog](https://github.com/users/derwin-white/projects/1/views/1).
+As of 2026-11-24:
+
+- **Done this round:** granular taxonomy expansion (227 tags — see
+  "Taxonomy expansion" above); the Admin screen for entering data
+  (entities, tags, projects — backlog #4); Cards/List view toggle for
+  search results (backlog #1).
+- **Still open on the backlog:** allow users to submit custom skill/
+  equipment tags beyond the controlled vocabulary (#3, a self-service
+  version of what the Admin tag form currently does as an unrestricted
+  "anyone can add a tag" form).
+- **Still open, not yet on the backlog as separate items:** stand up
+  Aurora PostgreSQL Serverless v2 and confirm PostGIS/`pg_trgm` there;
+  decide an auth approach (the Admin screen currently has none); build
+  the tag-promotion workflow (reviewing `free_text_skills` for values
+  that should graduate into the controlled vocabulary); AWS hosting
+  specifics (region, scale) still need confirming with the user per the
+  table above.

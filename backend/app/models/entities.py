@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from geoalchemy2 import Geography
-from sqlalchemy import ARRAY, Boolean, ForeignKey, SmallInteger, Text, text
+from sqlalchemy import ARRAY, Boolean, FetchedValue, ForeignKey, SmallInteger, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,7 +35,10 @@ class Entity(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
-    search_vector = mapped_column(TSVECTOR)
+    # GENERATED ALWAYS ... STORED in the DB (001_core_schema.sql) — FetchedValue
+    # tells the ORM not to send this column on INSERT/UPDATE (Postgres rejects
+    # an explicit value for a generated column) and to read it back instead.
+    search_vector = mapped_column(TSVECTOR, server_default=FetchedValue())
 
     entity_type: Mapped[EntityType] = relationship()
     tags: Mapped[list["Tag"]] = relationship(secondary="entity_tags", viewonly=True)
