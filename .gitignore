@@ -8,3 +8,6 @@ backend/.venv/
 backend/.env
 backend/**/__pycache__/
 *.pyc
+
+# frontend (local env overrides, e.g. LAN IP for phone testing)
+frontend/.env
