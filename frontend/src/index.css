@@ -6,13 +6,14 @@
   --c-white: #ffffff;
   --c-navy: #0f2a55;
   --c-navy-bright: #2a5caa;
+  --c-blue-bg: #b9d2ef;
   --c-orange: #ff6a1a;
   --c-orange-deep: #c9470a;
 
   --text: var(--c-black);
   --text-h: #000000;
   --text-muted: rgba(11, 13, 18, 0.62);
-  --bg: var(--c-white);
+  --bg: var(--c-blue-bg);
   --surface: var(--c-white);
   --border: rgba(11, 13, 18, 0.14);
   --accent: var(--c-orange);
