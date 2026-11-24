@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -105,8 +105,10 @@ async def list_project_members(project_id: uuid.UUID, db: AsyncSession = Depends
     ]
 
 
-@router.post("/{project_id}/members", response_model=ProjectMemberOut, status_code=201)
-async def add_project_member(project_id: uuid.UUID, payload: ProjectMemberCreate, db: AsyncSession = Depends(get_db)):
+@router.post("/{project_id}/members", response_model=ProjectMemberOut)
+async def add_project_member(
+    project_id: uuid.UUID, payload: ProjectMemberCreate, response: Response, db: AsyncSession = Depends(get_db)
+):
     project = (await db.execute(select(Project).where(Project.id == project_id))).scalar_one_or_none()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -115,6 +117,26 @@ async def add_project_member(project_id: uuid.UUID, payload: ProjectMemberCreate
         raise HTTPException(status_code=404, detail="Entity not found")
     if payload.role_tag_id is None and not payload.role_free_text:
         raise HTTPException(status_code=400, detail="Provide role_tag_id or role_free_text")
+
+    # Idempotent on (project_id, entity_id), the table's own primary key —
+    # self-service "join this project" (see the frontend's JoinProjectSection)
+    # means a user could plausibly click it twice, or already be on the
+    # roster from an admin-entered row. Return the existing membership (200)
+    # instead of a 500 on the PK violation.
+    existing = (
+        await db.execute(
+            select(ProjectMember).where(
+                ProjectMember.project_id == project_id, ProjectMember.entity_id == payload.entity_id
+            )
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        response.status_code = 200
+        role_label = existing.role_free_text
+        if existing.role_tag_id is not None:
+            tag = (await db.execute(select(Tag).where(Tag.id == existing.role_tag_id))).scalar_one_or_none()
+            role_label = tag.label if tag else role_label
+        return ProjectMemberOut(entity_id=entity.id, entity_name=entity.name, role=role_label, status=existing.status)
 
     member = ProjectMember(
         project_id=project_id,
@@ -131,4 +153,5 @@ async def add_project_member(project_id: uuid.UUID, payload: ProjectMemberCreate
         tag = (await db.execute(select(Tag).where(Tag.id == payload.role_tag_id))).scalar_one_or_none()
         role_label = tag.label if tag else role_label
 
+    response.status_code = 201
     return ProjectMemberOut(entity_id=entity.id, entity_name=entity.name, role=role_label, status=member.status)

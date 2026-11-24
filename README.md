@@ -69,7 +69,13 @@ fetching via `@tanstack/react-query` against the backend above. Screens:
   for scanning more results at once.
 - **Entity detail** — profile, tags, connections, 2nd-degree "people you
   may know."
-- **Projects** — list + detail page showing the roster.
+- **Projects** — list + detail page showing the roster, plus a
+  **"Link yourself to this project"** section: find your own profile by
+  name (type-ahead), pick your role (type-ahead against the controlled
+  vocabulary, or type a custom one if nothing fits), and add yourself to
+  the roster — `POST /projects/{id}/members` is idempotent on
+  `(project_id, entity_id)`, so clicking it twice (or already being on
+  the roster) confirms instead of erroring.
 - **List Yourself** (`/join`) — the **public-facing, customer-facing**
   form for a person or business to submit themselves: profile fields plus
   three `TagPicker` sections (Skills / Equipment / Roles), each with a
@@ -89,7 +95,10 @@ fetching via `@tanstack/react-query` against the backend above. Screens:
   stays consistent and testable. A deactivated tag keeps its row (nothing
   is hard-deleted) but stops appearing in search, type-ahead, and the
   Join page's picker. Entity creation lives on the Join page now, not
-  here — the Admin screen only manages vocabulary and projects.
+  here — the Admin screen only manages vocabulary and projects. Each
+  category's tag list is its own scrollable box (capped to roughly 20
+  visible rows before it scrolls independently of the other categories)
+  so a deep category like Camera doesn't push the whole page down.
 
 ```bash
 cd frontend
@@ -220,6 +229,39 @@ verified the same way (applied, re-run to confirm no-op, existing search
 query re-checked). Note: `Executive Producer` (role) and `Location
 Manager` (skill) were requested again in this round but were already
 added in wave 1 — not duplicated.
+
+## Demo data
+
+[`db/seed/002_demo_expansion.sql`](db/seed/002_demo_expansion.sql) grows
+the sample dataset well past the original schema-prototyping seed:
+**32 entities** (the original 10 + 20 new individuals + 2 new
+businesses) and **12 projects** (the original 2 + 10 new).
+
+The 10 new projects are each inspired by a real recent (2025/2026)
+theatrical release, renamed to a distinct fictional title (not the real
+titles, and descriptions are original genre-flavor text, not copied
+synopses) — e.g. *Spider-Man: Brand New Day* → **Web Slinger: Brand New
+Dawn**, *Michael* → **Moonwalker: A Life in Rhythm**, *The Odyssey* →
+**The Long Voyage Home**. Each has a realistic roster mixing the 20 new
+entities with freelancers from the original seed (the same person
+working multiple shows, same as real crews) and, on one project, the two
+new business entities as vendors (`role_free_text`, same hybrid pattern
+the original seed used for "Aerial Operator").
+
+The 20 new individual entities fill departments the original seed never
+touched — VFX, stunts, art, costume, hair/makeup, music, casting,
+locations, production office, sound — each tagged with the real
+controlled-vocabulary entry for their role (and equipment for a few,
+e.g. a gaffer with an `ARRI SkyPanel S360` tag). The 2 new businesses
+(a post-production house, an event production company) populate
+`entity_types` categories added in the taxonomy-expansion session that
+had zero entities until now.
+
+Not idempotent like the taxonomy migrations — this is seed data, so
+re-running it against the same database would duplicate rows (same
+caveat as the original `001_sample_data.sql`). Applied once and verified:
+entity/project counts, a sample roster, and the `project_members` PK
+constraint all checked directly in Postgres after loading.
 
 ## Search prototyping — validated
 

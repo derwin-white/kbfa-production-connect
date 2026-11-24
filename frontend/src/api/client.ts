@@ -8,6 +8,7 @@ import type {
   Project,
   ProjectCreateInput,
   ProjectMember,
+  ProjectMemberCreateInput,
   Tag,
   TagCreateInput,
 } from "./types";
@@ -78,6 +79,8 @@ export const api = {
     members: (id: string) => request<ProjectMember[]>(`/projects/${id}/members`),
     create: (payload: ProjectCreateInput) =>
       request<Project>("/projects/", { method: "POST", body: JSON.stringify(payload) }),
+    addMember: (id: string, payload: ProjectMemberCreateInput) =>
+      request<ProjectMember>(`/projects/${id}/members`, { method: "POST", body: JSON.stringify(payload) }),
   },
 };
 

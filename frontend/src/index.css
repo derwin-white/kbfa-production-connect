@@ -580,6 +580,18 @@ main {
   margin: 0 0 8px;
 }
 
+/* Caps each category's own list to ~20 visible rows and scrolls within
+   that box instead of growing the page — a category with hundreds of
+   tags (e.g. Camera Department) stays contained and independently
+   scrollable from every other category's list. */
+.manage-tags-group .plain-list {
+  max-height: 700px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px 10px;
+}
+
 .manage-tags-row {
   display: flex;
   align-items: center;
@@ -631,4 +643,15 @@ main {
 
 .join-page__form h3 {
   margin-top: 22px;
+}
+
+.join-project {
+  margin-top: 20px;
+}
+
+.join-project__identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
 }

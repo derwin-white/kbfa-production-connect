@@ -103,3 +103,9 @@ export interface ProjectCreateInput {
   start_date?: string;
   end_date?: string;
 }
+
+export interface ProjectMemberCreateInput {
+  entity_id: string;
+  role_tag_id?: string;
+  role_free_text?: string;
+}
