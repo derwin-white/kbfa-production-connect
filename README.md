@@ -154,7 +154,7 @@ because they already referenced CSS custom properties (`--accent`,
   sub-problem later (e.g. an activity feed); consider Neptune (graph) or
   OpenSearch (search-at-scale) only as later additions fed from Postgres
   via CDC, not day-one requirements.
-- **Skill/equipment taxonomy: hybrid.** A curated controlled vocabulary
+- **Role/Skill/Equipment taxonomy: hybrid.** A curated controlled vocabulary
   (`tags` table, with `aliases` for synonyms like "DP" → "Director of
   Photography") for the common/searchable cases, PLUS a free-text overflow
   field directly on `entities` (`free_text_skills`) for anything that
