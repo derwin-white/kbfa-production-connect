@@ -435,6 +435,7 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
                     {tag.aliases && tag.aliases.length > 0 && (
                       <span className="manage-tags-row__aliases">aka {tag.aliases.join(", ")}</span>
                     )}
+                    <span className="manage-tags-row__actions">
                     {confirmingId === tag.id ? (
                       <span className="manage-tags-row__confirm">
                         <span>Deactivate?</span>
@@ -468,6 +469,7 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
                         </button>
                       </>
                     )}
+                    </span>
                   </li>
                 ),
               )}

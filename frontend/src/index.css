@@ -618,7 +618,17 @@ main {
 .manage-tags-row__aliases {
   font-size: 12px;
   color: var(--text-muted);
-  flex: 1;
+}
+
+/* Pushed to the row's right edge regardless of whether the aliases span
+   (the only other flexible-width sibling) is present — previously only
+   the aliases span had flex:1, so rows without an alias left Edit/
+   Deactivate sitting right next to the label instead of right-aligned. */
+.manage-tags-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 .manage-tags-row__confirm {
