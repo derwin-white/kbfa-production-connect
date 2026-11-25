@@ -269,6 +269,25 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
     );
   }, [tagsQuery.data, q]);
 
+  // Independent of the `tagType` filter above (which may be scoped to one
+  // type or empty) — this always fetches every active tag, across all
+  // types, so the category type-ahead in the row editor has the complete
+  // list to search no matter what the admin's current filter is set to.
+  const allTagsForCategoriesQuery = useQuery({
+    queryKey: ["tags", "manage", "all-for-categories"],
+    queryFn: () => api.tags.list({}),
+  });
+
+  const categoriesByType = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const t of allTagsForCategoriesQuery.data ?? []) {
+      if (!t.category) continue;
+      if (!map.has(t.tag_type)) map.set(t.tag_type, new Set());
+      map.get(t.tag_type)!.add(t.category);
+    }
+    return map;
+  }, [allTagsForCategoriesQuery.data]);
+
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const deactivate = useMutation({
@@ -351,6 +370,14 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
       {tagsQuery.isLoading && <p>Loading…</p>}
       {tagsQuery.data && filteredTags.length === 0 && <p>No matching active tags.</p>}
 
+      {editDraft && (
+        <datalist id="existing-categories">
+          {[...(categoriesByType.get(editDraft.tagType) ?? [])].sort().map((category) => (
+            <option key={category} value={category} />
+          ))}
+        </datalist>
+      )}
+
       <div className="manage-tags-list">
         {grouped.map(([category, tags]) => (
           <div key={category} className="manage-tags-group">
@@ -380,6 +407,7 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
                       className="manage-tags-row__edit-field"
                       placeholder="Category"
                       value={editDraft.category}
+                      list="existing-categories"
                       onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })}
                     />
                     <input
