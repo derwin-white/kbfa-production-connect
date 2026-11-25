@@ -9,6 +9,17 @@
   --c-blue-bg: #b9d2ef;
   --c-orange: #ff6a1a;
   --c-orange-deep: #c9470a;
+  /* Tag-type color coding (role/skill/equipment) — a deliberate, scoped
+     exception to the four-color brand palette above, per direct request:
+     role tags stay orange (the brand accent), but skill and equipment
+     needed their own distinct colors to read apart from role at a
+     glance, so blue and grey are used here only, not elsewhere in the UI. */
+  --c-tag-skill: #2f6fed;
+  --c-tag-skill-bg: rgba(47, 111, 237, 0.12);
+  --c-tag-skill-border: rgba(47, 111, 237, 0.4);
+  --c-tag-equipment: #6b7280;
+  --c-tag-equipment-bg: rgba(107, 114, 128, 0.14);
+  --c-tag-equipment-border: rgba(107, 114, 128, 0.4);
 
   --text: var(--c-black);
   --text-h: #000000;
@@ -55,6 +66,12 @@
     --danger: #ff8a4a;
     --header-bg: #050912;
     --header-text: var(--c-white);
+    --c-tag-skill: #6d9bff;
+    --c-tag-skill-bg: rgba(109, 155, 255, 0.18);
+    --c-tag-skill-border: rgba(109, 155, 255, 0.45);
+    --c-tag-equipment: #9aa1ad;
+    --c-tag-equipment-bg: rgba(154, 161, 173, 0.18);
+    --c-tag-equipment-border: rgba(154, 161, 173, 0.45);
   }
 }
 
@@ -176,6 +193,33 @@ main {
   margin: 4px 0;
 }
 
+.tag-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tag-legend__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.tag-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-legend__hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .search-page {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -282,21 +326,25 @@ main {
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
-}
-
-.tag-chip--equipment {
-  background: var(--navy-bg);
-  color: var(--navy);
-  border-color: var(--navy-border);
+  border: 1px solid transparent;
 }
 
 .tag-chip--role {
-  background: transparent;
-  color: var(--text);
-  border-color: var(--border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.tag-chip--skill {
+  background: var(--c-tag-skill-bg);
+  color: var(--c-tag-skill);
+  border-color: var(--c-tag-skill-border);
+}
+
+.tag-chip--equipment {
+  background: var(--c-tag-equipment-bg);
+  color: var(--c-tag-equipment);
+  border-color: var(--c-tag-equipment-border);
 }
 
 .back-link {

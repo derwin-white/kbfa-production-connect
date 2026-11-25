@@ -85,9 +85,25 @@ export function SearchPage() {
   const selectedTags = tagSuggestionsQuery.data?.filter((t) => selectedTagIds.includes(t.id)) ?? [];
 
   return (
-    <div className="search-page">
-      <div className="search-page__filters">
-        <h2>Find production talent &amp; businesses</h2>
+    <>
+      <div className="tag-legend">
+        <span className="tag-legend__label">Tag colors:</span>
+        <span className="tag-legend__item">
+          <span className="tag-chip tag-chip--role">Role</span>
+          <span className="tag-legend__hint">what someone does on a production</span>
+        </span>
+        <span className="tag-legend__item">
+          <span className="tag-chip tag-chip--skill">Skill</span>
+          <span className="tag-legend__hint">what someone can do</span>
+        </span>
+        <span className="tag-legend__item">
+          <span className="tag-chip tag-chip--equipment">Equipment</span>
+          <span className="tag-legend__hint">what someone owns or operates</span>
+        </span>
+      </div>
+      <div className="search-page">
+        <div className="search-page__filters">
+          <h2>Find production talent &amp; businesses</h2>
 
         <label className="field">
           <span>Search</span>
@@ -235,5 +251,6 @@ export function SearchPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
