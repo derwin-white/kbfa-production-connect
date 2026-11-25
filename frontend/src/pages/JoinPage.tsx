@@ -162,6 +162,16 @@ export function JoinPage() {
           />
         </label>
 
+        <h3>Roles</h3>
+        <TagPicker
+          tagType="role"
+          label="Roles"
+          selected={roleTags}
+          onSelectedChange={setRoleTags}
+          freeformValue={roleFreeform}
+          onFreeformChange={setRoleFreeform}
+        />
+
         <h3>Skills</h3>
         <TagPicker
           tagType="skill"
@@ -180,16 +190,6 @@ export function JoinPage() {
           onSelectedChange={setEquipmentTags}
           freeformValue={equipmentFreeform}
           onFreeformChange={setEquipmentFreeform}
-        />
-
-        <h3>Roles</h3>
-        <TagPicker
-          tagType="role"
-          label="Roles"
-          selected={roleTags}
-          onSelectedChange={setRoleTags}
-          freeformValue={roleFreeform}
-          onFreeformChange={setRoleFreeform}
         />
 
         {error && <p className="field-error">Couldn't submit: {error}</p>}

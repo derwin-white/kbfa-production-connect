@@ -226,6 +226,22 @@ function AddProjectForm({ onToast }: { onToast: (kind: Toast["kind"], message: s
 
 const TAG_TYPES = ["skill", "equipment", "role"] as const;
 
+interface TagDraft {
+  tagType: (typeof TAG_TYPES)[number];
+  label: string;
+  category: string;
+  aliases: string;
+}
+
+function draftFromTag(tag: Tag): TagDraft {
+  return {
+    tagType: tag.tag_type,
+    label: tag.label,
+    category: tag.category ?? "",
+    aliases: (tag.aliases ?? []).join(", "),
+  };
+}
+
 function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message: string) => void }) {
   const queryClient = useQueryClient();
   const [tagType, setTagType] = useState<"" | (typeof TAG_TYPES)[number]>("");
@@ -264,6 +280,39 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
       queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
     onError: (err) => onToast("error", `Couldn't deactivate: ${(err as Error).message}`),
+  });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<TagDraft | null>(null);
+
+  function startEdit(tag: Tag) {
+    setConfirmingId(null);
+    setEditingId(tag.id);
+    setEditDraft(draftFromTag(tag));
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditDraft(null);
+  }
+
+  const updateTag = useMutation({
+    mutationFn: ({ id, draft }: { id: string; draft: TagDraft }) =>
+      api.tags.update(id, {
+        tag_type: draft.tagType,
+        label: draft.label.trim(),
+        category: draft.category.trim() || null,
+        aliases: draft.aliases
+          .split(",")
+          .map((a) => a.trim())
+          .filter(Boolean),
+      }),
+    onSuccess: (tag) => {
+      onToast("success", `Saved "${tag.label}".`);
+      cancelEdit();
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    },
+    onError: (err) => onToast("error", `Couldn't save: ${(err as Error).message}`),
   });
 
   const grouped = useMemo(() => {
@@ -307,42 +356,93 @@ function ManageTagsSection({ onToast }: { onToast: (kind: Toast["kind"], message
           <div key={category} className="manage-tags-group">
             <h4>{category}</h4>
             <ul className="plain-list">
-              {tags.map((tag) => (
-                <li key={tag.id} className="manage-tags-row">
-                  <span className={`tag-chip tag-chip--${tag.tag_type}`}>{tag.label}</span>
-                  {tag.aliases && tag.aliases.length > 0 && (
-                    <span className="manage-tags-row__aliases">aka {tag.aliases.join(", ")}</span>
-                  )}
-                  {confirmingId === tag.id ? (
-                    <span className="manage-tags-row__confirm">
-                      <span>Deactivate?</span>
-                      <button
-                        type="button"
-                        className="btn btn--primary btn--small"
-                        onClick={() => deactivate.mutate(tag.id)}
-                        disabled={deactivate.isPending}
-                      >
-                        {deactivate.isPending ? "…" : "Yes"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn--secondary btn--small"
-                        onClick={() => setConfirmingId(null)}
-                      >
-                        Cancel
-                      </button>
-                    </span>
-                  ) : (
+              {tags.map((tag) =>
+                editingId === tag.id && editDraft ? (
+                  <li key={tag.id} className="manage-tags-row manage-tags-row--editing">
+                    <select
+                      className="manage-tags-row__edit-field"
+                      value={editDraft.tagType}
+                      onChange={(e) => setEditDraft({ ...editDraft, tagType: e.target.value as TagDraft["tagType"] })}
+                    >
+                      <option value="skill">Skill</option>
+                      <option value="equipment">Equipment</option>
+                      <option value="role">Role</option>
+                    </select>
+                    <input
+                      type="text"
+                      className="manage-tags-row__edit-field"
+                      placeholder="Label"
+                      value={editDraft.label}
+                      onChange={(e) => setEditDraft({ ...editDraft, label: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="manage-tags-row__edit-field"
+                      placeholder="Category"
+                      value={editDraft.category}
+                      onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="manage-tags-row__edit-field manage-tags-row__edit-field--wide"
+                      placeholder="Aliases (comma-separated)"
+                      value={editDraft.aliases}
+                      onChange={(e) => setEditDraft({ ...editDraft, aliases: e.target.value })}
+                    />
                     <button
                       type="button"
-                      className="btn btn--secondary btn--small"
-                      onClick={() => setConfirmingId(tag.id)}
+                      className="btn btn--primary btn--small"
+                      disabled={!editDraft.label.trim() || updateTag.isPending}
+                      onClick={() => updateTag.mutate({ id: tag.id, draft: editDraft })}
                     >
-                      Deactivate
+                      {updateTag.isPending ? "Saving…" : "Save"}
                     </button>
-                  )}
-                </li>
-              ))}
+                    <button type="button" className="btn btn--secondary btn--small" onClick={cancelEdit}>
+                      Cancel
+                    </button>
+                  </li>
+                ) : (
+                  <li key={tag.id} className="manage-tags-row">
+                    <span className={`tag-chip tag-chip--${tag.tag_type}`}>{tag.label}</span>
+                    {tag.aliases && tag.aliases.length > 0 && (
+                      <span className="manage-tags-row__aliases">aka {tag.aliases.join(", ")}</span>
+                    )}
+                    {confirmingId === tag.id ? (
+                      <span className="manage-tags-row__confirm">
+                        <span>Deactivate?</span>
+                        <button
+                          type="button"
+                          className="btn btn--primary btn--small"
+                          onClick={() => deactivate.mutate(tag.id)}
+                          disabled={deactivate.isPending}
+                        >
+                          {deactivate.isPending ? "…" : "Yes"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--secondary btn--small"
+                          onClick={() => setConfirmingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <>
+                        <button type="button" className="btn btn--secondary btn--small" onClick={() => startEdit(tag)}>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--secondary btn--small"
+                          onClick={() => setConfirmingId(tag.id)}
+                        >
+                          Deactivate
+                        </button>
+                      </>
+                    )}
+                  </li>
+                ),
+              )}
             </ul>
           </div>
         ))}

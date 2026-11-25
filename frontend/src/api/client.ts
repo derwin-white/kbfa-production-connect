@@ -5,12 +5,14 @@ import type {
   EntitySearchParams,
   EntitySearchResult,
   EntityType,
+  EntityUpdateInput,
   Project,
   ProjectCreateInput,
   ProjectMember,
   ProjectMemberCreateInput,
   Tag,
   TagCreateInput,
+  TagUpdateInput,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -52,6 +54,8 @@ export const api = {
       request<Tag[]>(`/tags/${buildQuery(params)}`),
     create: (payload: TagCreateInput) =>
       request<Tag>("/tags/", { method: "POST", body: JSON.stringify(payload) }),
+    update: (tagId: string, payload: TagUpdateInput) =>
+      request<Tag>(`/tags/${tagId}`, { method: "PATCH", body: JSON.stringify(payload) }),
     deactivate: (tagId: string) => request<void>(`/tags/${tagId}`, { method: "DELETE" }),
   },
 
@@ -61,8 +65,12 @@ export const api = {
     get: (id: string) => request<EntitySearchResult>(`/entities/${id}`),
     create: (payload: EntityCreateInput) =>
       request<Entity>("/entities/", { method: "POST", body: JSON.stringify(payload) }),
+    update: (id: string, payload: EntityUpdateInput) =>
+      request<Entity>(`/entities/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
     addTag: (entityId: string, tagId: string) =>
       request<void>(`/entities/${entityId}/tags/${tagId}`, { method: "POST" }),
+    removeTag: (entityId: string, tagId: string) =>
+      request<void>(`/entities/${entityId}/tags/${tagId}`, { method: "DELETE" }),
   },
 
   connections: {

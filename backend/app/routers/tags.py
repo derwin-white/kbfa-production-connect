@@ -1,13 +1,13 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.tags import Tag
-from app.schemas.tags import TagCreate, TagOut
+from app.schemas.tags import TagCreate, TagOut, TagUpdate
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -67,6 +67,33 @@ async def create_tag(payload: TagCreate, response: Response, db: AsyncSession = 
 
     await db.refresh(tag)
     response.status_code = 201
+    return tag
+
+
+@router.patch("/{tag_id}", response_model=TagOut)
+async def update_tag(tag_id: uuid.UUID, payload: TagUpdate, db: AsyncSession = Depends(get_db)):
+    """Edits every field of a tag in place (type, label, category,
+    aliases) — the admin UI's inline row editor. Keyed on the same
+    (tag_type, lower(label)) uniqueness as create; editing into a
+    collision with another existing tag is rejected rather than
+    silently merged, since that would delete the other tag's identity
+    out from under anything already attached to it.
+    """
+    tag = (await db.execute(select(Tag).where(Tag.id == tag_id))).scalar_one_or_none()
+    if tag is None:
+        raise HTTPException(status_code=404, detail="Tag not found")
+
+    data = payload.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        setattr(tag, field, value)
+
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="A tag with this type and label already exists")
+
+    await db.refresh(tag)
     return tag
 
 

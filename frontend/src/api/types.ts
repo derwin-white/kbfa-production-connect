@@ -94,6 +94,24 @@ export interface TagCreateInput {
   aliases?: string[];
 }
 
+export interface TagUpdateInput {
+  tag_type?: "skill" | "equipment" | "role";
+  label?: string;
+  category?: string | null;
+  aliases?: string[];
+}
+
+export interface EntityUpdateInput {
+  name?: string;
+  headline?: string | null;
+  bio?: string | null;
+  contact?: Record<string, string>;
+  free_text_skills?: string[];
+  location_label?: string | null;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface ProjectCreateInput {
   name: string;
   description?: string;

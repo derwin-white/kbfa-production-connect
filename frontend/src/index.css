@@ -312,6 +312,17 @@ main {
   border-top: 1px solid var(--border);
 }
 
+.entity-detail__header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.entity-detail__header-row h1 {
+  margin: 0;
+}
+
 .entity-detail__headline,
 .entity-detail__location {
   color: var(--text-muted);
@@ -616,6 +627,25 @@ main {
   gap: 6px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.manage-tags-row--editing {
+  flex-wrap: wrap;
+}
+
+.manage-tags-row__edit-field {
+  flex: 1 1 110px;
+  min-width: 90px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.manage-tags-row__edit-field--wide {
+  flex: 2 1 180px;
 }
 
 .join-page {

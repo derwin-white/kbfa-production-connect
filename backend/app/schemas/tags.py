@@ -10,6 +10,13 @@ class TagCreate(BaseModel):
     aliases: list[str] = []
 
 
+class TagUpdate(BaseModel):
+    tag_type: str | None = None
+    label: str | None = None
+    category: str | None = None
+    aliases: list[str] | None = None
+
+
 class TagOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
