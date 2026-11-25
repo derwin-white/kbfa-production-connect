@@ -2,6 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { TagChip } from "../components/TagChip";
+import type { Tag } from "../api/types";
+
+const TAG_SECTIONS: { tagType: Tag["tag_type"]; heading: string }[] = [
+  { tagType: "role", heading: "Roles" },
+  { tagType: "skill", heading: "Skills" },
+  { tagType: "equipment", heading: "Equipment" },
+];
 
 export function EntityDetailPage() {
   const { entityId } = useParams<{ entityId: string }>();
@@ -39,16 +46,20 @@ export function EntityDetailPage() {
       {entity.location_label && <p className="entity-detail__location">📍 {entity.location_label}</p>}
       {entity.bio && <p className="entity-detail__bio">{entity.bio}</p>}
 
-      {entity.tags.length > 0 && (
-        <section>
-          <h2>Skills &amp; equipment</h2>
-          <div className="entity-card__tags">
-            {entity.tags.map((tag) => (
-              <TagChip key={tag.id} tag={tag} />
-            ))}
-          </div>
-        </section>
-      )}
+      {TAG_SECTIONS.map(({ tagType, heading }) => {
+        const tagsOfType = entity.tags.filter((tag) => tag.tag_type === tagType);
+        if (tagsOfType.length === 0) return null;
+        return (
+          <section key={tagType}>
+            <h2>{heading}</h2>
+            <div className="entity-card__tags">
+              {tagsOfType.map((tag) => (
+                <TagChip key={tag.id} tag={tag} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
 
       {entity.free_text_skills.length > 0 && (
         <section>
